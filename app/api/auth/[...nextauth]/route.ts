@@ -1,179 +1,117 @@
-import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import CredentialsProvider from 'next-auth/providers/credentials';
-import  prisma  from "@/lib/prismasingleton"
-;
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import prisma from "@/lib/prismasingleton";
 
 const handler = NextAuth({
-  
-    // Configure one or more authentication providers
-   
-      
-      providers: [
-        GoogleProvider({
-          clientId: process.env.NEXT_PUBLIC_CLIENT_ID ,
-          clientSecret: process.env.NEXT_PUBLIC_CLIENT_SECRET  ,
-          authorization: {
-            params: {
-              prompt: "consent",
-              access_type: "offline",
-              response_type: "code"
-            },
-            
-          },
-         
-        }),
-    //     CredentialsProvider({
-    //       name: "Credentials",
-    //       credentials: {
-    //         email: { label: "Email", type: "text" },
-    //         password: { label: "Password", type: "password" },
-    //       },
-    //       async authorize(credentials, req) {
-    //         const { email, password } = credentials;
-    // console.log(credentials)
-           
-    //           return { id: "user.id", name: "user.name", email: "user.email" };
-    //         // }
-    
-    //         // Return null if authentication fails
-    //         return null;
-    //       },
-    //     }),
+  // Configure providers
+  providers: [
+    GoogleProvider({
+      clientId: process.env.NEXT_PUBLIC_CLIENT_ID || "default_client_id",
+      clientSecret: process.env.NEXT_PUBLIC_CLIENT_SECRET || "default_client_secret",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
+    }),
     CredentialsProvider({
-   
       name: "Credentials",
-    
       credentials: {
-        
-        username: { label: "Username", type: "email ", placeholder: "jsmith" },
+        username: { label: "Username", type: "text", placeholder: "jsmith@example.com" },
         password: { label: "Password", type: "password" },
       },
-     
-        async authorize(credentials, req) {
-          try{
-            console.log("reached signin credentials authorize function");
-      
-          // Ensure username and password are provided
+      async authorize(credentials) {
+        try {
           if (!credentials?.username || !credentials?.password) {
             throw new Error("Missing username or password");
           }
-      
-          // Find the user by email (assumes email is unique in your schema)
+
+          // Find the user in the database
           const user = await prisma.user.findFirst({
-            where: {
-              email: credentials.username, // username corresponds to email
-            },
+            where: { email: credentials.username },
           });
-      console.log(user)
+
           if (!user) {
             throw new Error("No user found with this email");
           }
-          const isPasswordValid = (credentials.password == user.password)
-          // Verify the password (use bcrypt for hashed passwords)
-          console.log("Provided password:", credentials.password);
-          console.log("Stored password:", user.password);
-console.log(isPasswordValid)          
+
+          // Password validation (replace with hashing like bcrypt for production)
+          const isPasswordValid = credentials.password === user.password;
+
           if (!isPasswordValid) {
             throw new Error("Invalid password");
           }
-      
-          // Return the user object on successful authentication
-          // return { id: user.id, name: user.name, email: user.email };
-          return user
-          }
-          catch(err){console.log(err)}
-        },
+
+          // Return the user object
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          };
+        } catch (err) {
+          console.error(err);
+          throw new Error("Invalid credentials");
+        }
+      },
     }),
-      ],
-      session:{
-strategy:"jwt",
-maxAge:24*60*60
+  ],
 
-      },
-      callbacks: {
-        // async redirect({ url, baseUrl }) {
-        //   // Redirect to the specified URL or default to the baseUrl
-        //   return url.startsWith(baseUrl) ? url : `${baseUrl}/home`;
-        // },
-        async signIn({ account, profile }) {
-          // Example: Only allow users with a specific domain
-          if (account?.provider === "google" ) {
+  session: {
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
 
-          const result =  await prisma.user.findUnique({
-              where:{
+  callbacks: {
+    async signIn({ account, profile }) {
+      if (account?.provider === "google" && profile?.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: profile.email },
+        });
 
-          email: profile?.email
+        console.log(profile)
 
-              }}
-            )
-if(result){
-  
-  console.log("found User")
-  return false}
-          await  prisma.user.create(
-              {
-              data:{
-name:profile?.name,
-email:profile?.email,
-profilepic:profile?.picture
+        if (existingUser) {
+          console.log("Found existing user");
+          return true;
+        }
 
-              }
+        await prisma.user.create({
+          data: {
+            name: profile.name || "Unknown",
+            email: profile.email,
+            profilepic: (profile?.picture) || null,
+          },
+        });
 
-            })
-            console.log("Created New User")
-            console.log(profile)
+        console.log("Created new user");
+      }
 
+      return true;
+    },
 
+    async session({ session, token }) {
+      if (token?.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
 
-            return true; // Allow sign-in
-          }
-          // if(account?.provider === "Credentials")
-          // {
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
+    },
+  },
 
-          //   return true;
-          // }
-          return true
-        },
-        async session({ session, token }) {
-          session.user.id = token.sub;
-          return session;
-        },
-        async jwt({ token, user }) {
-          if (user) token.sub = user.id;
-          console.log(token)
-          console.log(user)
-          return token;
-        },
-      },
-      secret: "jj",
-      // pages: {
-      //   signIn: "/auth/signin", // Optional: Custom sign-in page
-      // },
-    
-      // callbacks: {
-      //   async session({ session, token, user }) {
-      //     // Add additional fields to the session object
-      //     session.user.id = token.sub; // Add user ID from Google
-      //     session.user.accessToken = token.accessToken; // Add accessToken if needed
-      //     return session;
-      //   },
-      //   async jwt({ token, account, user }) {
-      //     if (account) {
-      //       // Add account details to the token
-      //       token.accessToken = account.access_token;
-      //     }
-      //     return token;
-      //   },
-      // },
-      pages: {
+  secret: process.env.NEXTAUTH_SECRET || "default_secret",
+
+  pages: {
     signIn: "/auth/signin", // Custom sign-in page
-      // Custom error page
-},
-}
-  
-)
+  },
+});
 
-export { handler as GET, handler as POST ,   }
-
-
+export { handler as GET, handler as POST };

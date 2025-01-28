@@ -7,7 +7,13 @@ import  prisma  from "@/lib/prismasingleton";
 
 
 
-export const signup = async (userdata) => {
+export const signup = async (userdata :{
+
+NAME:string,
+PASSWORD:string,
+Gmail:string
+
+}) => {
 
 //  const prisma = new PrismaClient()
 
