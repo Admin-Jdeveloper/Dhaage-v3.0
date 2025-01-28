@@ -20,7 +20,7 @@ import { Form } from "@/components/ui/form"
 // import { Input } from "@/components/ui/input"
 import { CustomFormField } from "./FormField"
 import { signIn } from "next-auth/react"
-import { signin, signup} from "@/actions/user.actions"
+import { signup} from "@/actions/user.actions"
 import {  useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { ToastAction } from "../ui/toast"
@@ -46,8 +46,12 @@ import { ToastAction } from "../ui/toast"
 
 // })
 
+interface ProfileFormProps {
+  type: "signin" | "signup";
+}
 
-export function ProfileForm({type}) {
+
+export function ProfileForm({type}:ProfileFormProps  ) {
 
 const Router = useRouter();
 
@@ -64,8 +68,9 @@ const[buttonstate,setbutton]=React.useState(false)
       PASSWORD:""
     },
   })
-
-  const onSubmit = async (values) => {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+  const onSubmit  = async (values ) => {
 
     // e.preventdefault()
    
@@ -95,7 +100,7 @@ const[buttonstate,setbutton]=React.useState(false)
 console.log(result)
         console.log("REACHED AFTER CUSTOM SIGNIN")
   setbutton(false)
-  if(!(result.ok)){
+  if(!(result?.ok)){
     return toast({ title: "Wrong Credentials", description: "Try Again ! " });
   }
   if(result?.ok){Router.push("/home")}
