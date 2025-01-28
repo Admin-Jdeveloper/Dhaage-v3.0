@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgres://neondb_owner:npg_WLMZTr2ufk5Y@ep-orange-glitter-a29k3q4p-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+}
+
+
+
+model user{
+
+id  String     @unique @default(uuid())
+name String    
+email String    @unique
+password String  @default("Google Signin")
+profilepic String @default("false")
+followers String[] @default([])
+following  String[] @default([])
+posts post[] 
+
+
+
+
+}
+
+
+model post{
+
+id  String     @unique @default(uuid())
+Caption String @default("No Caption")
+posturl String 
+author user @relation(fields: [userid], references: [id])
+userid  String
+createdAt DateTime @default(now())
+
+
+}
+
