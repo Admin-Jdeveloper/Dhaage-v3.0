@@ -2,7 +2,12 @@ import { ProfileForm } from '@/components/custom/Formelement'
 import React from 'react'
 
 const page = () => {
+
+
+console.log(process.env.NEXTAUTH_CLIENT_SECRET)
+
   return (
+
    <ProfileForm type="signin" />
   )
 }

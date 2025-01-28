@@ -4,11 +4,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prismasingleton";
 
 const handler = NextAuth({
+
+
+
   // Configure providers
   providers: [
     GoogleProvider({
-      clientId: process.env.NEXT_PUBLIC_CLIENT_ID || "default_client_id",
-      clientSecret: process.env.NEXT_PUBLIC_CLIENT_SECRET || "default_client_secret",
+      clientId: process.env.NEXTAUTH_CLIENT_ID || "lll",
+      clientSecret: process.env.NEXTAUTH_CLIENT_SECRET || "lll"  ,
       authorization: {
         params: {
           prompt: "consent",
