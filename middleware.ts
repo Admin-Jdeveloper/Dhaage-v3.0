@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(request) {
+export function middleware(request:NextRequest) {
   const token = request.cookies.get('next-auth.session-token');
   // const token2 = request.cookies.get('userToken'); // Example token
   // && request.nextUrl.pathname.startsWith('/yoyo')
