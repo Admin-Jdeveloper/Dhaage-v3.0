@@ -82,6 +82,8 @@ const handler = NextAuth({
           data: {
             name: profile.name || "Unknown",
             email: profile.email,
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
             profilepic: (profile?.picture) || null,
           },
         });
@@ -94,6 +96,8 @@ const handler = NextAuth({
 
     async session({ session, token }) {
       if (token?.sub) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
         session.user.id = token.sub;
       }
       return session;
